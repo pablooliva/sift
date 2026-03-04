@@ -92,7 +92,7 @@ curl http://localhost:6333/collections
 ## Related Projects
 
 The fixed qdrant-txtai integration is in:
-`../qdrant-txtai/` (pablo branch)
+`../qdrant-tartai/` (fork with modern qdrant-client compatibility)
 
 ## Maintenance
 

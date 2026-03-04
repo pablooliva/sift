@@ -307,7 +307,7 @@ See `README.md` section "Backup and Restore" for full documentation.
 
 **Required:**
 - `TOGETHERAI_API_KEY`: Together AI API key for RAG (get at together.ai)
-- `TXTAI_API_URL`: API URL accessible to Streamlit container (e.g., `http://192.168.0.*:8300`)
+- `TXTAI_API_URL`: API URL accessible to Streamlit container (e.g., `http://YOUR_SERVER_IP:8300`)
 
 **Optional but Recommended:**
 - `FIRECRAWL_API_KEY`: For web scraping in frontend upload page

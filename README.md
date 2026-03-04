@@ -56,7 +56,7 @@ This project provides a complete semantic search infrastructure with intelligent
 
 3. **Wait for initialization** (first run downloads models):
    ```bash
-   docker-compose logs -f txtai
+   docker compose logs -f txtai
    ```
 
    **First-run download sizes (~10 GB total):**
@@ -66,7 +66,7 @@ This project provides a complete semantic search infrastructure with intelligent
    - BART-large (summarization): ~560 MB
 
    **Minimal setup** (text search only, no GPU required):
-   - Skip GPU runtime, comment out `GPU` profile in docker-compose.yml
+   - Skip GPU runtime, comment out `GPU` profile in docker compose.yml
    - Download time: ~274 MB (embeddings only)
    - No Together AI key needed to start; only required for RAG queries (`/ask`)
 
@@ -155,7 +155,7 @@ curl -X POST "http://localhost:8300/similarity" \
 │   ├── DATA_STORAGE_GUIDE.md   # Storage architecture deep dive
 │   ├── QDRANT_SETUP.md         # Detailed Qdrant configuration guide
 │   └── OLLAMA_INTEGRATION.md   # Ollama/LLM integration guide
-├── docker-compose.yml          # Service definitions
+├── docker compose.yml          # Service definitions
 ├── config.yml                  # txtai configuration
 ├── custom-requirements.txt     # Additional Python packages
 ├── models/                     # Cached transformer models
@@ -214,17 +214,17 @@ See [docs/QUERY-ROUTING.md](docs/QUERY-ROUTING.md) for full documentation.
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Stop all services
-docker-compose down
+docker compose down
 
 # View logs (all services or specific)
-docker-compose logs -f
-docker-compose logs -f txtai
+docker compose logs -f
+docker compose logs -f txtai
 
 # Restart services
-docker-compose restart
+docker compose restart
 ```
 
 **Building the txtai image** (required on first run, and after changing `custom-requirements.txt`, `Dockerfile.txtai`, or the qdrant wheel):
@@ -283,20 +283,20 @@ See [docs/KNOWLEDGE-GRAPH.md](docs/KNOWLEDGE-GRAPH.md) for full documentation in
 
 **Optional components** (configure in `config.yml`): extractive QA, translation (`Helsinki-NLP/opus-mt-en-es`), zero-shot classification (`facebook/bart-large-mnli` for auto-labeling).
 
-**GPU:** To limit to first GPU, set `NVIDIA_VISIBLE_DEVICES=0` in `docker-compose.yml`.
+**GPU:** To limit to first GPU, set `NVIDIA_VISIBLE_DEVICES=0` in `docker compose.yml`.
 
 ## Troubleshooting
 
 **Services won't start:**
 ```bash
 docker ps                          # verify Docker is running
-docker-compose logs txtai          # check service logs
+docker compose logs txtai          # check service logs
 docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi  # verify GPU
 ```
 
 **Out of memory:** Use `neuml/txtai:latest` (CPU-only) instead of `neuml/txtai-gpu:latest`.
 
-**Qdrant connection issues:** `curl http://localhost:6333` — verify it responds, then `docker-compose exec txtai ping qdrant`.
+**Qdrant connection issues:** `curl http://localhost:6333` — verify it responds, then `docker compose exec txtai ping qdrant`.
 
 **Model download fails:** Clear cache with `rm -rf ./models/*` and restart.
 
@@ -325,7 +325,7 @@ See [docs/TESTING.md](docs/TESTING.md) for full documentation including test arc
 
 1. **Increase Qdrant resources**:
    ```yaml
-   # In docker-compose.yml under qdrant service
+   # In docker compose.yml under qdrant service
    deploy:
      resources:
        limits:
@@ -402,7 +402,9 @@ For production:
 
 ## License
 
-This project configuration is provided as-is. Component licenses:
+sift is licensed under the **[ProPal Ethical License v1.0](LICENSE)** — a custom ethical license that restricts use by entities engaged in practices the author considers harmful. See [LICENSE](LICENSE) for the full terms.
+
+Bundled component licenses:
 - txtai: Apache 2.0
 - Qdrant: Apache 2.0
 - Sentence Transformers: Apache 2.0
