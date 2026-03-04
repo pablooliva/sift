@@ -1,0 +1,14 @@
+# Option 1: Install from your GitHub fork directly
+git+https://github.com/YOUR_USERNAME/qdrant-txtai.git@main
+
+# Option 2: Install from a specific branch
+git+https://github.com/YOUR_USERNAME/qdrant-txtai.git@fix-search-batch
+
+# Option 3: Install from a specific commit
+git+https://github.com/YOUR_USERNAME/qdrant-txtai.git@COMMIT_HASH
+
+# Option 4: Install from a local directory (if you clone it locally)
+# file:///path/to/your/local/qdrant-txtai
+
+# Keep litellm
+litellm

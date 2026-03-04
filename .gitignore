@@ -1,0 +1,91 @@
+# Runtime data directories - do not commit
+txtai_data/
+qdrant_storage/
+neo4j_data/
+models/
+shared_uploads/
+shared_uploads_test/
+postgres_data/
+document_archive/
+document_archive_test/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+.cache/
+txtai_data.backup/
+temp/
+.firecrawl/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Test artifacts
+frontend/tests/fixtures/
+frontend/screenshots/
+frontend/tests/screenshots/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+backups/
+audit.jsonl
+audit.jsonl.backup
+
+# Claude Code
+.claude/
+.mcp.json
+
+# Node
+node_modules/
+
+# Neo4j logs
+neo4j_logs/

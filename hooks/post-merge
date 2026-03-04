@@ -1,0 +1,116 @@
+#!/bin/bash
+#
+# Post-merge hook for txtai data protection
+# SPEC-029 REQ-001: Automatically creates backup when merging to master
+#
+# This hook is triggered after a successful git merge.
+# It creates a backup of the current data state before any documents
+# are uploaded with the new code, providing a safety net for development.
+#
+# Installed by: ./scripts/setup-hooks.sh
+#
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Get current branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# Only run on master branch (REQ-001: merges TO master)
+if [ "$CURRENT_BRANCH" != "master" ]; then
+    exit 0
+fi
+
+# Get commit hash for backup naming
+COMMIT_HASH=$(git rev-parse --short HEAD)
+
+# Project root (two levels up from .git/hooks/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+echo ""
+echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+echo -e "${BLUE}  Post-Merge Backup (SPEC-029 Data Protection)${NC}"
+echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+echo ""
+echo "Merged to master at commit $COMMIT_HASH"
+echo "Creating backup before any documents are uploaded..."
+echo ""
+
+# Call backup script with custom naming
+BACKUP_NAME="post_merge_${COMMIT_HASH}"
+
+# SPEC-029 FAIL-001: Non-blocking design
+# If backup fails, warn but don't block merge completion
+if "$PROJECT_ROOT/scripts/backup.sh" --output "$PROJECT_ROOT/backups/$BACKUP_NAME" --no-compress 2>&1; then
+    echo ""
+    echo -e "${GREEN}✓ Backup created: backups/$BACKUP_NAME/${NC}"
+
+    # SPEC-029 REQ-006: Verify backup integrity
+    echo ""
+    echo "Verifying backup..."
+
+    BACKUP_OK=true
+
+    # Check PostgreSQL backup
+    if [ -f "$PROJECT_ROOT/backups/$BACKUP_NAME/postgres.sql" ]; then
+        SIZE=$(du -h "$PROJECT_ROOT/backups/$BACKUP_NAME/postgres.sql" | cut -f1)
+        echo -e "${GREEN}  ✓ PostgreSQL: $SIZE${NC}"
+    elif [ -d "$PROJECT_ROOT/backups/$BACKUP_NAME/postgres_data" ]; then
+        echo -e "${GREEN}  ✓ PostgreSQL: data directory${NC}"
+    else
+        echo -e "${YELLOW}  ⚠ PostgreSQL backup not found${NC}"
+        BACKUP_OK=false
+    fi
+
+    # Check Qdrant backup
+    if [ -d "$PROJECT_ROOT/backups/$BACKUP_NAME/qdrant_storage" ]; then
+        echo -e "${GREEN}  ✓ Qdrant: vector storage${NC}"
+    else
+        echo -e "${YELLOW}  ⚠ Qdrant backup not found${NC}"
+        BACKUP_OK=false
+    fi
+
+    # Check txtai data
+    if [ -d "$PROJECT_ROOT/backups/$BACKUP_NAME/txtai_data" ]; then
+        echo -e "${GREEN}  ✓ txtai: BM25 index${NC}"
+    else
+        echo -e "${YELLOW}  ⚠ txtai data backup not found${NC}"
+        BACKUP_OK=false
+    fi
+
+    echo ""
+    if [ "$BACKUP_OK" = true ]; then
+        echo -e "${GREEN}✓ Backup verified successfully${NC}"
+        echo ""
+        echo "You can now safely upload documents and test the new code."
+        echo "If issues occur, restore with:"
+        echo "  ./scripts/restore.sh backups/$BACKUP_NAME"
+    else
+        echo -e "${YELLOW}⚠ Backup verification found issues${NC}"
+        echo "Consider running manual backup before testing:"
+        echo "  ./scripts/backup.sh"
+    fi
+else
+    echo ""
+    echo -e "${YELLOW}⚠ Backup failed!${NC}"
+    echo ""
+    echo "The merge completed successfully, but the automatic backup failed."
+    echo "Consider running a manual backup before uploading any documents:"
+    echo ""
+    echo "  ./scripts/backup.sh"
+    echo ""
+    echo "This provides a recovery point if the new code has issues."
+fi
+
+echo ""
+echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+echo ""
+
+# SPEC-029 FAIL-001: Always exit successfully (non-blocking)
+exit 0

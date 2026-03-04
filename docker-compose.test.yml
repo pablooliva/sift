@@ -1,0 +1,183 @@
+# Test services for E2E and functional testing (SPEC-024)
+#
+# This compose file runs isolated test services on different ports
+# to avoid conflicts with production services.
+#
+# Usage:
+#   # Start test services (services load .env.test automatically via env_file)
+#   docker compose -f docker-compose.test.yml up -d
+#
+#   # Run E2E tests
+#   cd frontend && pytest tests/e2e/ -v
+#
+#   # Stop test services
+#   docker compose -f docker-compose.test.yml down
+#
+#   # Full cleanup (removes test data)
+#   docker compose -f docker-compose.test.yml down -v
+#
+# Port mapping (test vs production):
+#   - Qdrant:     9333 (test) vs 7333 (prod)
+#   - PostgreSQL: 9433 (test) vs 5432 (prod)
+#   - Neo4j HTTP: 9474 (test) vs 7474 (prod)
+#   - Neo4j Bolt: 9687 (test) vs 7687 (prod)
+#   - txtai API:  9301 (test) vs 8300 (prod)
+#   - Frontend:   9502 (test) vs 8501 (prod)
+#
+# Environment:
+#   Test services use .env.test which has test-appropriate values:
+#   - RAG_SIMILARITY_THRESHOLD=0.3 (vs 0.7 in production)
+#   - GRAPHITI_ENABLED=true (enables knowledge graph for testing)
+#   - DEBUG=True
+
+services:
+  qdrant-test:
+    image: qdrant/qdrant:latest
+    container_name: txtai-qdrant-test
+    ports:
+      - "9333:6333"
+      - "9334:6334"
+    volumes:
+      - qdrant_test_storage:/qdrant/storage
+    restart: unless-stopped
+
+  postgres-test:
+    image: postgres:15
+    container_name: txtai-postgres-test
+    environment:
+      - POSTGRES_DB=txtai_test
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "9433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./tests/init-test-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d txtai_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  neo4j-test:
+    image: neo4j:5.26-community
+    container_name: txtai-neo4j-test
+    ports:
+      - "9474:7474"  # HTTP (Neo4j Browser UI) - test port
+      - "9687:7687"  # Bolt protocol - test port
+    volumes:
+      - neo4j_test_data:/data
+      - neo4j_test_logs:/logs
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-neo4j_test_password}
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_memory_heap_initial__size=512M
+      - NEO4J_dbms_memory_heap_max__size=2G
+      - NEO4J_dbms_memory_pagecache_size=512M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD:-neo4j_test_password} 'RETURN 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  txtai-test:
+    image: txtai-api:local
+    container_name: txtai-api-test
+    env_file:
+      - .env.test
+    ports:
+      - "9301:8000"
+    volumes:
+      - ./models:/models
+      - ./config.test.yml:/config.yml:ro
+      - txtai_test_data:/data
+      - ./shared_uploads_test:/uploads
+      - ./custom_actions:/custom_actions
+    environment:
+      - TRANSFORMERS_CACHE=/models
+      - CONFIG=/config.yml
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - QDRANT_HOST=qdrant-test
+      - QDRANT_PORT=6333
+      - TOGETHERAI_API_KEY=${TOGETHERAI_API_KEY}
+      - RAG_LLM_MODEL=${RAG_LLM_MODEL:-Qwen/Qwen2.5-72B-Instruct-Turbo}
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://host.docker.internal:11434}
+      - OLLAMA_EMBEDDINGS_MODEL=${OLLAMA_EMBEDDINGS_MODEL:-nomic-embed-text}
+      - PYTHONPATH=/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      qdrant-test:
+        condition: service_started
+      postgres-test:
+        condition: service_healthy
+      neo4j-test:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: txtai-frontend-test
+    env_file:
+      - .env.test
+    ports:
+      - "9502:8501"
+    volumes:
+      - ./frontend:/app
+      - ./config.test.yml:/config.yml:ro
+      - ./shared_uploads_test:/uploads
+      # SPEC-036 REQ-006: Document archive for content recovery (test isolation)
+      - ./document_archive_test:/archive
+    working_dir: /app
+    environment:
+      # Test-specific URLs (override any from .env.test)
+      - TXTAI_API_URL=http://txtai-test:8000
+      - QDRANT_URL=http://qdrant-test:6333
+      - QDRANT_COLLECTION=txtai_test_embeddings
+      - OLLAMA_EMBEDDING_DIMENSION=768
+      # Neo4j test instance
+      - NEO4J_URI=bolt://neo4j-test:7687
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-neo4j_test_password}
+      # API keys from main .env (loaded by Docker Compose from cwd)
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY:-}
+      - TOGETHERAI_API_KEY=${TOGETHERAI_API_KEY}
+      # Graphiti Ollama embeddings (SPEC-035)
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://host.docker.internal:11434}
+      - GRAPHITI_EMBEDDING_MODEL=${GRAPHITI_EMBEDDING_MODEL:-nomic-embed-text}
+      - GRAPHITI_EMBEDDING_DIM=${GRAPHITI_EMBEDDING_DIM:-768}
+      # Other values come from .env.test (RAG_*, CHUNK_*, GRAPHITI_*, etc.)
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    restart: unless-stopped
+    depends_on:
+      - txtai-test
+      - qdrant-test
+      - neo4j-test
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  qdrant_test_storage:
+  postgres_test_data:
+  neo4j_test_data:
+  neo4j_test_logs:
+  txtai_test_data:

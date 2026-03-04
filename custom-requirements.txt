@@ -1,0 +1,17 @@
+# qdrant-tartai: compatibility fork of neuml/qdrant-txtai by Pablo Oliva
+# Fork: https://github.com/pablooliva/qdrant-tartai
+# Resolves qdrant-client 1.16.0+ compatibility issues in the upstream package
+# Attribution: original work by NeuML (https://github.com/neuml/qdrant-txtai)
+# License: Apache 2.0 (upstream) — see fork README for details
+file:///qdrant_txtai-2.0.0-py3-none-any.whl
+litellm
+psycopg2-binary
+# Audio/video processing dependencies
+openai-whisper
+pydub
+moviepy
+# Image processing dependencies (SPEC-008)
+pillow-heif  # HEIC/HEIF support for iPhone photos
+imagehash    # Perceptual hashing for duplicate detection
+# Embedding resilience (SPEC-023)
+tenacity     # Retry with exponential backoff for Ollama API calls

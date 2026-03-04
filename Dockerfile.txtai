@@ -1,0 +1,21 @@
+# Custom txtai API image with pre-installed dependencies
+# This avoids reinstalling dependencies on every container start
+#
+# Build: docker compose build txtai
+# Rebuild after changing custom-requirements.txt or this file
+
+FROM neuml/txtai-gpu:latest
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY custom-requirements.txt /custom-requirements.txt
+COPY qdrant_txtai-2.0.0-py3-none-any.whl /qdrant_txtai-2.0.0-py3-none-any.whl
+RUN pip install --no-cache-dir -r /custom-requirements.txt
+
+# Default command
+CMD ["uvicorn", "txtai.api:app", "--host", "0.0.0.0", "--port", "8000"]

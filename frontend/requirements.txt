@@ -1,0 +1,59 @@
+# txtai Frontend Dependencies
+# Personal Knowledge Management Interface
+
+# Core Framework
+streamlit>=1.28.0
+
+# API Communication
+requests>=2.31.0
+
+# Knowledge Graph Integration (SPEC-021, pinned to match MCP per SPEC-037 REQ-005c)
+graphiti-core==0.26.3
+
+# Web Scraping
+firecrawl-py==4.16.0  # Pinned: timeout behavior verified (SPEC-045)
+ural>=1.3.0  # URL normalization and tracking parameter removal (SPEC-021)
+
+# Data Handling
+pandas>=2.0.0
+
+# Visualization
+streamlit-agraph>=0.0.45
+plotly>=5.17.0
+
+# Configuration
+python-dotenv>=1.0.0
+
+# YAML parsing (for config validation)
+pyyaml>=6.0.1
+
+# Document Processing
+PyPDF2>=3.0.0
+python-docx>=1.1.0
+
+# Text Splitting (improved chunking with structure awareness)
+langchain-text-splitters>=0.2.0
+
+# Media Processing (Video audio extraction)
+# Note: Whisper transcription now handled by txtai API (GPU-accelerated)
+moviepy<2.0  # Pin to 1.x for compatibility with moviepy.editor imports
+
+# Image Processing (SPEC-008)
+pillow>=10.0.0       # Core image manipulation
+pillow-heif>=0.14.0  # HEIC/HEIF support for iPhone photos
+imagehash>=4.3.1     # Perceptual hashing for duplicate detection
+pytesseract>=0.3.10  # Python wrapper for Tesseract OCR
+
+# Testing
+pytest>=7.4.0
+pytest-mock>=3.12.0
+pytest-asyncio>=0.21.0  # For async test support (SPEC-021)
+pytest-timeout>=2.2.0  # Test timeout support (SPEC-024)
+pytest-playwright>=0.4.0  # Playwright pytest integration (SPEC-024)
+playwright>=1.40.0  # Browser automation for E2E tests (SPEC-024)
+psycopg2-binary>=2.9.9  # PostgreSQL driver for test database cleanup (SPEC-024)
+responses>=0.24.0  # HTTP request mocking for API tests
+
+# Code Quality
+black>=23.12.0
+flake8>=6.1.0

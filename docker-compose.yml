@@ -1,0 +1,258 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: txtai-qdrant
+    ports:
+      - "7333:6333"
+      - "7334:6334"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: txtai-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-txtai}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Neo4j for Graphiti knowledge graph (SPEC-021)
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: txtai-neo4j
+    ports:
+      - "7474:7474"  # HTTP (Neo4j Browser UI)
+      - "7687:7687"  # Bolt protocol
+    volumes:
+      - ./neo4j_data:/data
+      - ./neo4j_logs:/logs
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-neo4j_password}
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_memory_heap_initial__size=512M
+      - NEO4J_dbms_memory_heap_max__size=2G
+      - NEO4J_dbms_memory_pagecache_size=512M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD:-neo4j_password} 'RETURN 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  txtai:
+    build:
+      context: .
+      dockerfile: Dockerfile.txtai
+    image: txtai-api:local
+    container_name: txtai-api
+    ports:
+      - "8300:8000"
+    volumes:
+      # Mount local directory for model caching to avoid re-downloading models
+      - ./models:/models
+      # Mount configuration file
+      - ./config.yml:/config.yml:ro
+      # Mount data directory for index files (scoring data, config)
+      # Note: Document content is stored in PostgreSQL, not here
+      - ./txtai_data:/data
+      # Shared volume for file exchange with frontend (audio/video transcription)
+      - ./shared_uploads:/uploads
+      # Log files accessible on host
+      - ./logs/api:/var/log/txtai
+      # Mount custom workflow actions (SPEC-019 Phase 1)
+      - ./custom_actions:/custom_actions
+    environment:
+      # Set the Hugging Face transformers cache directory
+      - TRANSFORMERS_CACHE=/models
+      # Configuration file location
+      - CONFIG=/config.yml
+      # Enable NVIDIA GPU visibility
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # Qdrant connection
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      # Together AI API key (for LLM/RAG via external serverless API)
+      - TOGETHERAI_API_KEY=${TOGETHERAI_API_KEY}
+      # LLM model for txtai backend features (shared with frontend RAG)
+      - RAG_LLM_MODEL=${RAG_LLM_MODEL:-Qwen/Qwen2.5-72B-Instruct-Turbo}
+      # Ollama configuration (SPEC-019 Phase 1)
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://host.docker.internal:11434}
+      - OLLAMA_EMBEDDINGS_MODEL=${OLLAMA_EMBEDDINGS_MODEL:-nomic-embed-text}
+      - OLLAMA_EMBEDDING_DIMENSION=${OLLAMA_EMBEDDING_DIMENSION:-768}
+      - OLLAMA_CLASSIFICATION_MODEL=${OLLAMA_CLASSIFICATION_MODEL:-llama3.2-vision:11b}
+      # PostgreSQL connection (for txtai content storage)
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-txtai}
+      # Add parent directory to Python path for custom workflow actions
+      - PYTHONPATH=/
+    extra_hosts:
+      # Allow container to access host services (like Ollama)
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      qdrant:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: txtai-frontend
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./frontend:/app
+      - ./config.yml:/config.yml:ro
+      # Shared volume for file exchange with txtai-api (audio/video transcription)
+      - ./shared_uploads:/uploads
+      # Log files accessible on host
+      - ./logs/frontend:/logs
+      # SPEC-036 REQ-006: Document archive for content recovery
+      - ./document_archive:/archive
+    working_dir: /app
+    environment:
+      - TXTAI_API_URL=${TXTAI_API_URL:-http://localhost:8300}
+      - QDRANT_URL=http://qdrant:6333  # Docker network name, not host URL
+      # Embedding dimension for Qdrant collection creation (must match OLLAMA_EMBEDDINGS_MODEL)
+      - OLLAMA_EMBEDDING_DIMENSION=${OLLAMA_EMBEDDING_DIMENSION:-768}
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY:-}
+      - TOGETHERAI_API_KEY=${TOGETHERAI_API_KEY}
+      - DEBUG=${DEBUG:-False}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-100}
+      - MAX_BATCH_SIZE_MB=${MAX_BATCH_SIZE_MB:-500}
+      - SEARCH_RESULTS_PER_PAGE=${SEARCH_RESULTS_PER_PAGE:-20}
+      - MAX_MEDIA_DURATION_MINUTES=${MAX_MEDIA_DURATION_MINUTES:-30}
+      - RAG_SEARCH_WEIGHTS=${RAG_SEARCH_WEIGHTS:-0.5}
+      - RAG_SIMILARITY_THRESHOLD=${RAG_SIMILARITY_THRESHOLD:-0.5}
+      - RAG_MAX_DOCUMENT_CHARS=${RAG_MAX_DOCUMENT_CHARS:-10000}
+      - RAG_LLM_MODEL=${RAG_LLM_MODEL:-Qwen/Qwen2.5-72B-Instruct-Turbo}
+      - RAG_MAX_TOKENS=${RAG_MAX_TOKENS:-500}
+      - RAG_TEMPERATURE=${RAG_TEMPERATURE:-0.3}
+      # Document chunking configuration
+      - CHUNK_ENABLED=${CHUNK_ENABLED:-true}
+      - CHUNK_SIZE=${CHUNK_SIZE:-1500}
+      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-200}
+      - MAX_CHUNKS_PER_SEARCH_RESULT=${MAX_CHUNKS_PER_SEARCH_RESULT:-3}
+      # Graphiti knowledge graph integration (SPEC-021)
+      - GRAPHITI_ENABLED=${GRAPHITI_ENABLED:-false}
+      - NEO4J_URI=${NEO4J_URI:-bolt://neo4j:7687}
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-neo4j_password}
+      - GRAPHITI_LLM_MODEL=${GRAPHITI_LLM_MODEL:-meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo}
+      - GRAPHITI_SMALL_LLM_MODEL=${GRAPHITI_SMALL_LLM_MODEL:-Qwen/Qwen2.5-7B-Instruct-Turbo}
+      - GRAPHITI_EMBEDDING_MODEL=${GRAPHITI_EMBEDDING_MODEL:-nomic-embed-text}
+      - GRAPHITI_EMBEDDING_DIM=${GRAPHITI_EMBEDDING_DIM:-768}
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://host.docker.internal:11434}
+      # Graphiti rate limiting and batching (SPEC-034)
+      - GRAPHITI_BATCH_SIZE=${GRAPHITI_BATCH_SIZE:-3}
+      - GRAPHITI_BATCH_DELAY=${GRAPHITI_BATCH_DELAY:-45}
+      - GRAPHITI_MAX_RETRIES=${GRAPHITI_MAX_RETRIES:-3}
+      - GRAPHITI_RETRY_BASE_DELAY=${GRAPHITI_RETRY_BASE_DELAY:-10}
+      - SEMAPHORE_LIMIT=${SEMAPHORE_LIMIT:-5}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    restart: unless-stopped
+    depends_on:
+      - txtai
+      - qdrant
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # MCP Server for Claude Code integration (SPEC-015) - DISABLED BY DEFAULT
+  #
+  # This service is for LOCAL setup only (Claude Code on same machine as txtai).
+  # For REMOTE setup (Claude Code on different machine), use UV locally instead.
+  # See mcp_server/README.md for setup instructions.
+  #
+  # To enable for local setup, uncomment the service below and run:
+  #   docker compose up -d txtai-mcp
+  #
+  txtai-mcp:
+    build:
+      context: ./mcp_server
+      dockerfile: Dockerfile
+    container_name: txtai-mcp
+    volumes:
+      - ./scripts:/app/scripts:ro  # SPEC-038: Mount scripts for graphiti-ingest.py
+    environment:
+      - TXTAI_API_URL=http://txtai:8000
+      - TOGETHERAI_API_KEY=${TOGETHERAI_API_KEY}
+      - RAG_LLM_MODEL=${RAG_LLM_MODEL:-Qwen/Qwen2.5-72B-Instruct-Turbo}
+      - RAG_SEARCH_WEIGHTS=${RAG_SEARCH_WEIGHTS:-0.5}
+      - RAG_SIMILARITY_THRESHOLD=${RAG_SIMILARITY_THRESHOLD:-0.5}
+      - RAG_MAX_DOCUMENT_CHARS=${RAG_MAX_DOCUMENT_CHARS:-10000}
+      - RAG_MAX_TOKENS=${RAG_MAX_TOKENS:-500}
+      - RAG_TEMPERATURE=${RAG_TEMPERATURE:-0.3}
+      # Graphiti knowledge graph integration (SPEC-037, SPEC-038)
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://host.docker.internal:11434}
+      - GRAPHITI_SEARCH_TIMEOUT_SECONDS=${GRAPHITI_SEARCH_TIMEOUT_SECONDS:-10}
+      # Graphiti model configuration (SPEC-038 - BUG-E2E-004 fix)
+      - GRAPHITI_LLM_MODEL=${GRAPHITI_LLM_MODEL:-meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo}
+      - GRAPHITI_SMALL_LLM_MODEL=${GRAPHITI_SMALL_LLM_MODEL:-Qwen/Qwen2.5-7B-Instruct-Turbo}
+      - GRAPHITI_EMBEDDING_MODEL=${GRAPHITI_EMBEDDING_MODEL:-nomic-embed-text}
+      - GRAPHITI_EMBEDDING_DIM=${GRAPHITI_EMBEDDING_DIM:-768}
+      # PostgreSQL connection for script chunk detection (SPEC-038)
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-txtai}
+    depends_on:
+      - txtai
+      - neo4j
+    networks:
+      - default
+    # Note: This container runs in foreground mode for MCP stdio transport
+    # To use with Claude Code, execute: docker exec -i txtai-mcp uv run txtai_rag_mcp.py
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Example: Additional service for scheduled workflows (optional)
+  # txtai-service:
+  #   image: neuml/txtai-cpu:latest
+  #   container_name: txtai-service
+  #   volumes:
+  #     - ./models:/models
+  #     - ./workflows:/workflows
+  #   environment:
+  #     - TRANSFORMERS_CACHE=/models
+  #   restart: unless-stopped
+
+# Optional: Create named volumes for better management
+# volumes:
+#   models:
+#   workflows:

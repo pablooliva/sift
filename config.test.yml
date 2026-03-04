@@ -1,0 +1,85 @@
+# txtai Test Configuration (SPEC-024)
+# Used by docker-compose.test.yml for isolated E2E testing
+#
+# Key differences from production config.yml:
+# - Uses txtai_test PostgreSQL database
+# - Uses txtai_test_embeddings Qdrant collection
+# - Connects to test service hostnames
+
+writable: true
+mcp: true
+
+embeddings:
+  path: ollama
+  method: custom_actions.ollama_vectors.OllamaVectors
+  # TEST DATABASE - different from production
+  content: postgresql+psycopg2://postgres:postgres@postgres-test:5432/txtai_test
+  backend: qdrant_txtai.ann.qdrant.Qdrant
+  keyword: true
+  scoring:
+    normalize: true
+    terms: true
+  qdrant:
+    host: qdrant-test
+    port: 6333
+    # TEST COLLECTION - different from production
+    collection: txtai_test_embeddings
+
+path: /data/index
+
+graph:
+  approximate: false
+  limit: 15
+  minscore: 0.1
+
+llm:
+  path: together_ai/Qwen/Qwen2.5-7B-Instruct-Turbo
+  api_base: https://api.together.xyz/v1
+  method: litellm
+
+textractor:
+  sentences: true
+
+imagehash:
+
+workflow:
+  ollama-caption:
+    tasks:
+      - action: custom_actions.ollama_captioner.caption
+
+  llm-summary:
+    tasks:
+      - task: template
+        template: |
+          Summarize the following document in 2-3 concise sentences. Focus on:
+          - The main topic or purpose
+          - Key techniques, methods, or findings
+          - Document structure (if step-by-step or comparative)
+
+          Be specific and technical. Avoid generic phrases.
+
+          IMPORTANT: Provide ONLY the summary itself. Do not include introductory phrases like "Here's a summary" or "This document discusses". Start directly with the content.
+
+          Document:
+          """
+          {text}
+          """
+
+          Summary:
+        action: llm
+        args:
+          defaultrole: user
+
+  ollama-labels:
+    tasks:
+      - action: custom_actions.ollama_classifier.classify
+        args: [["reference", "analysis", "technical", "strategic", "meeting-notes", "actionable", "status"]]
+
+  ollama-labels-with-scores:
+    tasks:
+      - action: custom_actions.ollama_classifier.classify_with_scores
+        args: [["reference", "analysis", "technical", "strategic", "meeting-notes", "actionable", "status"], true]
+
+  lazy-transcribe:
+    tasks:
+      - action: custom_actions.whisper_transcriber.transcribe

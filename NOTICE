@@ -1,0 +1,111 @@
+sift
+Copyright (c) 2026 Pablo Oliva
+
+This product includes software developed by third parties. The following is a
+summary of the key dependencies and their licenses. See each package's own
+license file for the full text.
+
+---
+
+## Core AI Framework
+
+**txtai** — https://github.com/neuml/txtai
+  License: Apache 2.0
+  Copyright: NeuML LLC
+
+**Graphiti** — https://github.com/getzep/graphiti
+  License: Apache 2.0
+  Copyright: Zep Software, Inc.
+
+**Whisper** — https://github.com/openai/whisper
+  License: MIT
+  Copyright: OpenAI
+
+**LiteLLM** — https://github.com/BerriAI/litellm
+  License: MIT
+  Copyright: BerriAI
+
+## Vector Database
+
+**Qdrant** — https://github.com/qdrant/qdrant
+  License: Apache 2.0
+  Copyright: Qdrant Team
+
+**qdrant-tartai** — https://github.com/pablooliva/qdrant-tartai
+  License: Apache 2.0
+  Note: This is a compatibility fork of the qdrant-txtai integration package
+  maintained by the project author. The original package is at
+  https://github.com/neuml/qdrant-txtai.
+
+## Graph Database
+
+**Neo4j Community Edition** — https://github.com/neo4j/neo4j
+  License: GNU General Public License v3.0 (GPL-3.0)
+  Copyright: Neo4j, Inc.
+  Note: Neo4j Community Edition is used as an external, separate network
+  service (Docker container). It is NOT bundled with or linked into sift's
+  source code. This arrangement does not trigger GPL copyleft obligations on
+  sift's code. Users who redistribute Neo4j must comply with GPL-3.0.
+
+## Web Framework
+
+**Streamlit** — https://github.com/streamlit/streamlit
+  License: Apache 2.0
+  Copyright: Streamlit, Inc.
+
+## MCP Server
+
+**FastMCP** — https://github.com/jlowin/fastmcp
+  License: Apache 2.0
+  Copyright: FastMCP Contributors
+
+## Document Processing
+
+**LangChain Text Splitters** — https://github.com/langchain-ai/langchain
+  License: MIT
+  Copyright: LangChain, Inc.
+
+**PyPDF2** — https://github.com/py-pdf/pypdf
+  License: BSD 3-Clause
+  Copyright: PyPDF Contributors
+
+**python-docx** — https://github.com/python-openxml/python-docx
+  License: MIT
+  Copyright: python-docx Contributors
+
+**Pillow** — https://github.com/python-pillow/Pillow
+  License: Historical Permission Notice and Disclaimer (HPND)
+  Copyright: Jeffrey A. Clark and contributors
+
+**pytesseract** — https://github.com/madmaze/pytesseract
+  License: Apache 2.0
+  Copyright: Samuel Hoffstaetter and contributors
+
+## Networking and Utilities
+
+**requests** — https://github.com/psf/requests
+  License: Apache 2.0
+  Copyright: Kenneth Reitz and contributors
+
+**tenacity** — https://github.com/jd/tenacity
+  License: Apache 2.0
+  Copyright: Julien Danjou and contributors
+
+**psycopg2** — https://github.com/psycopg/psycopg2
+  License: GNU Lesser General Public License v3 (LGPL-3.0)
+  Copyright: Federico Di Gregorio and contributors
+  Note: Used as psycopg2-binary; linked dynamically.
+
+## External Services
+
+This software optionally integrates with the following external services.
+Their use is governed by their respective terms of service:
+
+- **Together AI** — LLM inference for RAG queries
+- **Firecrawl** — Web scraping for URL ingestion
+- **Ollama** — Local embedding and LLM model serving
+
+---
+
+All other dependencies (pytest, plotly, pandas, etc.) are development or
+runtime utilities. See their respective project pages for license information.

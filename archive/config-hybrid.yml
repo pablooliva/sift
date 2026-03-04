@@ -1,0 +1,62 @@
+# txtai API Configuration - Hybrid Storage Option
+# This configuration uses Qdrant for vectors and SQLite for content
+
+# Enable writable mode for the API
+writable: true
+
+# Embeddings index configuration
+embeddings:
+  # Model path for embeddings
+  path: sentence-transformers/all-MiniLM-L6-v2
+
+  # Enable content storage in SQLite
+  content: true
+
+  # Use hybrid storage: Qdrant for vectors, SQLite for content
+  # Comment out the backend and qdrant sections to use pure SQLite/Faiss
+
+  # Option 1: Qdrant for vectors (requires fixing search_batch issue)
+  # backend: qdrant_txtai.ann.qdrant.Qdrant
+  # qdrant:
+  #   host: qdrant
+  #   port: 6333
+  #   collection: txtai_embeddings
+
+  # Option 2: Faiss for vectors (works out of the box)
+  backend: faiss
+
+# Path configuration - where to store the SQLite database and index files
+# This will create:
+#   /data/index/documents - SQLite database with full text
+#   /data/index/embeddings - Vector index (Faiss)
+#   /data/index/config.json - Index configuration
+path: /data/index
+
+# LLM integration with Ollama (running on host)
+llm:
+  path: ollama/qwen3:8b
+  api_base: http://host.docker.internal:11434
+  method: litellm
+
+# Optional: Enable additional components
+# Uncomment and customize as needed
+
+# Extractive QA
+# extractor:
+#   path: distilbert-base-cased-distilled-squad
+
+# Summarization
+# summary:
+#   path: sshleifer/distilbart-cnn-12-6
+
+# Translation
+# translation:
+#   path: Helsinki-NLP/opus-mt-en-es
+
+# Segmentation
+# segmentation:
+#   sentences: true
+
+# Labels (zero-shot classification)
+# labels:
+#   path: facebook/bart-large-mnli

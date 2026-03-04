@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# Pre-commit hook: Graphiti version synchronization check
+# SPEC-037 P1-002: Ensures frontend and MCP use same graphiti-core version
+#
+# This hook prevents commits when graphiti-core versions are out of sync
+# between frontend/requirements.txt and mcp_server/pyproject.toml
+#
+# To skip this check for a single commit:
+#   git commit --no-verify
+#
+# To disable this hook permanently:
+#   rm .git/hooks/pre-commit
+#   (or reinstall hooks without --graphiti-check flag)
+#
+
+# Run the version check script
+./scripts/check-graphiti-version.sh
+
+# Exit code 0 = versions match (allow commit)
+# Exit code 1 = versions mismatch (block commit)
+exit $?

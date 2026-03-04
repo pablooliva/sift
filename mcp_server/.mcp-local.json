@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "txtai": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "exec",
+        "-i",
+        "txtai-mcp",
+        "uv",
+        "run",
+        "txtai_rag_mcp.py"
+      ],
+      "env": {
+        "_comment_neo4j": "Graphiti knowledge graph integration (optional). Remove these vars to disable.",
+        "NEO4J_URI": "bolt://txtai-neo4j:7687",
+        "NEO4J_USER": "neo4j",
+        "NEO4J_PASSWORD": "your-neo4j-password",
+        "_comment_ollama": "Ollama API for Graphiti embeddings (uses Docker service name)",
+        "OLLAMA_API_URL": "http://ollama:11434",
+        "_comment_timeout": "Graphiti query timeout in seconds (default: 10)",
+        "GRAPHITI_SEARCH_TIMEOUT_SECONDS": "10"
+      }
+    }
+  }
+}

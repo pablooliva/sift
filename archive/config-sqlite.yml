@@ -1,0 +1,21 @@
+# txtai API Configuration with SQLite storage
+
+# Enable writable mode for the API
+writable: true
+
+# Embeddings index configuration with Faiss backend
+embeddings:
+  # Model path for embeddings
+  path: sentence-transformers/all-MiniLM-L6-v2
+  content: true
+  # Use Faiss as the backend (default, no Qdrant)
+  backend: faiss
+
+# Path configuration - where to store the index files
+path: /data/index
+
+# LLM integration with Ollama (running on host)
+llm:
+  path: ollama/qwen3:8b
+  api_base: http://host.docker.internal:11434
+  method: litellm
