@@ -1,0 +1,10 @@
+# Gitleaks configuration for sift
+# https://github.com/gitleaks/gitleaks
+
+[allowlist]
+description = "Known test fixture false positives"
+paths = [
+    # Test files intentionally contain fake/invalid keys for security testing
+    '''frontend/tests/integration/test_graphiti_edge_cases\.py''',
+    '''frontend/tests/unit/test_security\.py''',
+]
