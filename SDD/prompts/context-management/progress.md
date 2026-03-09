@@ -3,7 +3,7 @@
 ## Current State
 
 - **Feature:** SPEC-046: Open Source Release Preparation
-- **Status:** Planning Phase ✅ COMPLETE — All critical reviews done, ready for `/sdd:implementation-start`
+- **Status:** ✅ IMPLEMENTATION COMPLETE — sift is live at https://github.com/pablooliva/sift
 - **Research document:** `SDD/research/RESEARCH-046-open-source-release-prep.md`
 - **Critical review:** `SDD/reviews/CRITICAL-RESEARCH-046-open-source-release-prep-20260301.md`
 - **Research compaction:** `SDD/prompts/context-management/research-compacted-2026-03-01_16-35-54.md`
@@ -193,12 +193,16 @@ All REQ-010 through REQ-022 done. Key completions this session:
 - [x] REQ-019: `custom-requirements.txt` expanded with qdrant-tartai fork URL + attribution; CONTRIBUTING.md already had section
 - [x] Final verification greps: 0 IPs, 0 personal paths, 0 memodo in tracked files
 
-### Remaining (User Actions Required)
+### Session 2026-03-06 — Final Pre-Push Work
 
-- [ ] REQ-020: Fresh `git init` — user must run this on the server (final step)
-- [ ] PERF-001/PERF-002: `docker compose up -d` and unit tests — requires Docker environment on server
-- [ ] FAIL-003/FAIL-004: Validate services start without paid API keys — requires Docker environment
+- [x] REQ-020: Fresh `git init` — complete (499 files, single clean initial commit)
+- [x] Critical review (FINDING-001 to FINDING-006) — all fixed
+- [x] Gitleaks GitHub Action added to ci.yml
+- [x] `.gitleaks.toml` allowlist configured; local scan: no leaks in tracked files
+- [x] CHANGELOG.md created
+- [x] Push to github.com/pablooliva/sift — ✅ COMPLETE (2026-03-07)
+- [ ] PERF-001/PERF-002/FAIL-003/FAIL-004: Docker validation (deferred to server, optional)
 
-**Status:** All automated implementation complete. Only user-executed steps remain (git init on server + Docker validation).
+**Status:** ✅ SPEC-046 COMPLETE — sift is live at https://github.com/pablooliva/sift
 
-**Compaction file:** `SDD/prompts/context-management/implementation-compacted-2026-03-04_08-13-06.md`
+**Compaction file:** `SDD/prompts/context-management/implementation-compacted-2026-03-06_22-38-41.md`

@@ -5,8 +5,10 @@
 - **Based on Specification:** SPEC-046-open-source-release-prep.md
 - **Research Foundation:** RESEARCH-046-open-source-release-prep.md
 - **Start Date:** 2026-03-03
+- **Completion Date:** 2026-03-09
 - **Author:** Claude (with Pablo)
-- **Status:** In Progress
+- **Status:** Complete ✓
+- **Live:** https://github.com/pablooliva/sift
 
 ---
 
@@ -44,7 +46,7 @@
 - [x] REQ-017: Issue/PR templates — ✅ DONE (.github/ISSUE_TEMPLATE/bug_report.md, feature_request.md, PULL_REQUEST_TEMPLATE.md)
 - [x] REQ-018: `mcp_server/pyproject.toml` author attribution preserved — ✅ DONE (updated "Pablo" → "Pablo Oliva")
 - [x] REQ-019: qdrant-tartai fork documented per D-004 (Option B) — ✅ DONE (custom-requirements.txt expanded with fork URL + attribution; CONTRIBUTING.md already had qdrant-tartai section)
-- [ ] REQ-020: Fresh `git init` (final step after all verification) — Pending user action
+- [x] REQ-020: Fresh `git init` — ✅ DONE (5 clean commits; pushed to github.com/pablooliva/sift 2026-03-07)
 - [x] REQ-021: PostgreSQL connection vars parameterized — ✅ DONE (docker-compose.yml, docker-compose.test.yml, config.yml)
 - [x] REQ-022: `.env.example` is authoritative; all prod vars present — ✅ DONE (added POSTGRES_*, GRAPHITI_SEARCH_TIMEOUT_SECONDS)
 
@@ -61,12 +63,12 @@
 ### Edge Cases
 
 - [x] EDGE-001: `.env.test` gitignored or scrubbed before git add — ✅ DONE (.env.* covers it; .env.test.example scrubbed)
-- [ ] EDGE-002: qdrant-tartai fork reference documented (D-004 Option B) — Not Started
+- [x] EDGE-002: qdrant-tartai fork reference documented (D-004 Option B) — ✅ DONE (custom-requirements.txt line 1-2)
 - [x] EDGE-003: Search.py category filters dynamic from `MANUAL_CATEGORIES` — ✅ DONE (Phase 2 REQ-003)
 - [x] EDGE-004: Exactly 3 curated SDD examples, scrubbed — ✅ DONE (Phase 2 REQ-012: 5 files kept, 3 are curated examples + progress.md + VALIDATION-CHECKLIST)
-- [ ] EDGE-005: `populate_test_data.py` IP replaced — Not Started
-- [ ] EDGE-006: Backup test scripts personal paths replaced — Not Started
-- [ ] EDGE-007: Quick Start documents first-run downloads — Not Started
+- [x] EDGE-005: `populate_test_data.py` IP replaced — ✅ DONE (localhost:8300)
+- [x] EDGE-006: Backup test scripts personal paths replaced — ✅ DONE (/path/to/ generic placeholders)
+- [x] EDGE-007: Quick Start documents first-run downloads — ✅ DONE (REQ-011: nomic 274MB, llama 6.5GB, Whisper 3GB, BART 560MB)
 
 ### Failure Scenarios
 
@@ -75,7 +77,7 @@
 - [ ] FAIL-003: Unit tests pass after os.getenv() defaults changed — Pending (requires Docker environment; not validatable locally)
 - [ ] FAIL-004: Core services start without paid API keys — Pending (requires server Docker environment)
 - [ ] FAIL-005: GitHub name reserved ✅ DONE
-- [ ] FAIL-006: CI designed to work without paid API keys — Not Started
+- [x] FAIL-006: CI designed to work without paid API keys — ✅ DONE (Gitleaks uses GITHUB_TOKEN; unit tests use placeholder key)
 - [x] FAIL-007: Ruff violations assessed before CI creation — ✅ DONE (538 violations: 219 F401, 134 F541, 86 F841, 39 E712, 31 E722, 19 E402; CI uses --select E9,F63,F7,F82 only for initial release)
 
 ---
