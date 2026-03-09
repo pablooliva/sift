@@ -66,7 +66,7 @@ This project provides a complete semantic search infrastructure with intelligent
    - BART-large (summarization): ~560 MB
 
    **Minimal setup** (text search only, no GPU required):
-   - Skip GPU runtime, comment out `GPU` profile in docker compose.yml
+   - Skip GPU runtime, comment out `GPU` profile in docker-compose.yml
    - Download time: ~274 MB (embeddings only)
    - No Together AI key needed to start; only required for RAG queries (`/ask`)
 
@@ -155,7 +155,7 @@ curl -X POST "http://localhost:8300/similarity" \
 │   ├── DATA_STORAGE_GUIDE.md   # Storage architecture deep dive
 │   ├── QDRANT_SETUP.md         # Detailed Qdrant configuration guide
 │   └── OLLAMA_INTEGRATION.md   # Ollama/LLM integration guide
-├── docker compose.yml          # Service definitions
+├── docker-compose.yml          # Service definitions
 ├── config.yml                  # txtai configuration
 ├── custom-requirements.txt     # Additional Python packages
 ├── models/                     # Cached transformer models
@@ -283,7 +283,7 @@ See [docs/KNOWLEDGE-GRAPH.md](docs/KNOWLEDGE-GRAPH.md) for full documentation in
 
 **Optional components** (configure in `config.yml`): extractive QA, translation (`Helsinki-NLP/opus-mt-en-es`), zero-shot classification (`facebook/bart-large-mnli` for auto-labeling).
 
-**GPU:** To limit to first GPU, set `NVIDIA_VISIBLE_DEVICES=0` in `docker compose.yml`.
+**GPU:** To limit to first GPU, set `NVIDIA_VISIBLE_DEVICES=0` in `docker-compose.yml`.
 
 ## Troubleshooting
 
@@ -325,7 +325,7 @@ See [docs/TESTING.md](docs/TESTING.md) for full documentation including test arc
 
 1. **Increase Qdrant resources**:
    ```yaml
-   # In docker compose.yml under qdrant service
+   # In docker-compose.yml under qdrant service
    deploy:
      resources:
        limits:
