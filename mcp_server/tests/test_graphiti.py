@@ -18,13 +18,9 @@ import asyncio
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import the tools - fastmcp wraps with @mcp.tool decorator
-from txtai_rag_mcp import knowledge_graph_search as _knowledge_graph_search
-from txtai_rag_mcp import knowledge_timeline as _knowledge_timeline
-
-# Get the underlying callable functions
-knowledge_graph_search = _knowledge_graph_search.fn
-knowledge_timeline = _knowledge_timeline.fn
+# Import the tool functions directly
+# fastmcp 3.x returns the original function from @mcp.tool decorator
+from txtai_rag_mcp import knowledge_graph_search, knowledge_timeline
 
 
 # Fixtures for Graphiti testing
@@ -427,7 +423,7 @@ class TestToolDescription:
         """Test that graph_search description clearly distinguishes from knowledge_graph_search."""
         from txtai_rag_mcp import graph_search as _graph_search
 
-        docstring = _graph_search.fn.__doc__
+        docstring = _graph_search.__doc__
 
         # Should mention txtai's similarity graph
         assert "txtai" in docstring.lower() or "similarity" in docstring.lower()
@@ -516,13 +512,9 @@ class TestGraphitiIntegration:
 # SPEC-037 Week 3: Enrichment Tests (REQ-002, REQ-003, EDGE-008, FAIL-004, FAIL-005)
 # ============================================================================
 
-# Import enrichment-enabled tools
-from txtai_rag_mcp import search as _search
-from txtai_rag_mcp import rag_query as _rag_query
-
-# Get underlying callables
-search = _search.fn
-rag_query = _rag_query.fn
+# Import enrichment-enabled tools directly
+# fastmcp 3.x returns the original function from @mcp.tool decorator
+from txtai_rag_mcp import search, rag_query
 
 
 @pytest.fixture
@@ -1046,9 +1038,9 @@ class TestGroupIdParsing:
 
 
 # SPEC-040: Entity-Centric Browsing Tests
-# Import list_entities tool
-from txtai_rag_mcp import list_entities as _list_entities
-list_entities = _list_entities.fn
+# Import list_entities tool directly
+# fastmcp 3.x returns the original function from @mcp.tool decorator
+from txtai_rag_mcp import list_entities
 
 
 @pytest.fixture
@@ -2605,7 +2597,7 @@ class TestRAGTemporalContext:
         # This is an integration test that verifies the temporal context is included in the RAG workflow
         # We'll mock the components and verify the prompt contains temporal annotations
 
-        from txtai_rag_mcp import rag_query as _rag_query
+        from txtai_rag_mcp import rag_query
         from unittest.mock import patch, AsyncMock, Mock
         import requests
         import os
@@ -2616,9 +2608,6 @@ class TestRAGTemporalContext:
             "TOGETHERAI_API_KEY": "test-api-key",
             "TXTAI_API_URL": "http://localhost:8300"
         }
-
-        # Get the underlying function
-        rag_query = _rag_query.fn
 
         # Mock txtai search results
         mock_search_response = Mock()
@@ -2701,7 +2690,7 @@ class TestRAGTemporalContext:
     @pytest.mark.asyncio
     async def test_rag_query_temporal_context_optional(self, mock_graphiti_env):
         """Test that temporal context is NOT included when include_graph_context=False."""
-        from txtai_rag_mcp import rag_query as _rag_query
+        from txtai_rag_mcp import rag_query
         from unittest.mock import patch, Mock
         import os
 
@@ -2711,8 +2700,6 @@ class TestRAGTemporalContext:
             "TOGETHERAI_API_KEY": "test-api-key",
             "TXTAI_API_URL": "http://localhost:8300"
         }
-
-        rag_query = _rag_query.fn
 
         # Mock txtai search results
         mock_search_response = Mock()

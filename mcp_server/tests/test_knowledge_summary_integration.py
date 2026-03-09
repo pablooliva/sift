@@ -43,12 +43,10 @@ if os.getenv("NEO4J_URI") is None or os.getenv("TOGETHERAI_API_KEY") is None:
                     elif key in ("NEO4J_PASSWORD", "TOGETHERAI_API_KEY"):
                         os.environ[key] = value
 
-# Import the tool - fastmcp wraps with @mcp.tool decorator
-from txtai_rag_mcp import knowledge_summary as _knowledge_summary
+# Import the tool function directly
+# fastmcp 3.x returns the original function from @mcp.tool decorator
+from txtai_rag_mcp import knowledge_summary
 import graphiti_integration.graphiti_client_async as graphiti_module
-
-# Get the underlying callable function
-knowledge_summary = _knowledge_summary.fn
 
 
 @pytest.fixture(autouse=True)

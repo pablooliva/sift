@@ -15,14 +15,9 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import the FunctionTool objects and extract the underlying functions
-# fastmcp wraps functions with @mcp.tool decorator, storing original in .fn attribute
-from txtai_rag_mcp import rag_query as _rag_query, search as _search, list_documents as _list_documents
-
-# Get the underlying callable functions
-rag_query = _rag_query.fn
-search = _search.fn
-list_documents = _list_documents.fn
+# Import the tool functions directly
+# fastmcp 3.x returns the original function from @mcp.tool decorator
+from txtai_rag_mcp import rag_query, search, list_documents
 
 
 class TestRagQuery:

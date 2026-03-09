@@ -21,11 +21,9 @@ from collections import Counter
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import the tool - fastmcp wraps with @mcp.tool decorator
-from txtai_rag_mcp import knowledge_summary as _knowledge_summary
-
-# Get the underlying callable function
-knowledge_summary = _knowledge_summary.fn
+# Import the tool function directly
+# fastmcp 3.x returns the original function from @mcp.tool decorator
+from txtai_rag_mcp import knowledge_summary
 
 
 # Fixtures for knowledge_summary testing
