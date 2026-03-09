@@ -997,12 +997,12 @@ async def ingest_document_async(
     chunks_ingested = 0
 
     for i, chunk in enumerate(chunks):
-        chunk_text = chunk['text']
+        chunk_content = chunk['text']
 
         # Build episode metadata (matches frontend exactly)
         episode_kwargs = {
             'name': f"{doc_title} (chunk {i+1}/{len(chunks)})",
-            'content': chunk_text,
+            'content': chunk_content,
             'source': f"Document: {doc_title} ({doc_id[:8]}...)",
             'timestamp': datetime.now(timezone.utc),
             'group_id': doc_id  # Critical: enables per-document scoping
