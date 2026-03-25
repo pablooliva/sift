@@ -52,8 +52,8 @@ This project provides a complete semantic search infrastructure with intelligent
    docker compose up -d
 
    # CPU-only environment (no NVIDIA GPU):
-   docker compose -f docker-compose.yml -f docker-compose.cpu.yml build txtai
-   docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+   docker compose -f docker-compose.cpu.yml build txtai
+   docker compose -f docker-compose.cpu.yml up -d
    ```
 
 3. **Wait for initialization** (first run downloads models):
@@ -239,7 +239,7 @@ docker compose up -d             # start
 
 # CPU-only environment
 docker compose -f docker-compose.yml -f docker-compose.cpu.yml build txtai
-docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+docker compose -f docker-compose.cpu.yml up -d
 ```
 
 ## Data Persistence
@@ -304,7 +304,7 @@ docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi  # ver
 
 **"Could not select device driver nvidia":** You're running on a machine without an NVIDIA GPU. Use the CPU override:
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+docker compose -f docker-compose.cpu.yml up -d
 ```
 
 **Out of memory:** Use the CPU override (`docker-compose.cpu.yml`) which uses `neuml/txtai-cpu` base image.
