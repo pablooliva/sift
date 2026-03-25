@@ -136,7 +136,7 @@ services:
       - ./document_archive:/archive
     working_dir: /app
     environment:
-      - TXTAI_API_URL=${TXTAI_API_URL:-http://localhost:8300}
+      - TXTAI_API_URL=http://txtai:8000  # Docker network name, not host URL
       - QDRANT_URL=http://qdrant:6333  # Docker network name, not host URL
       # Embedding dimension for Qdrant collection creation (must match OLLAMA_EMBEDDINGS_MODEL)
       - OLLAMA_EMBEDDING_DIMENSION=${OLLAMA_EMBEDDING_DIMENSION:-768}
