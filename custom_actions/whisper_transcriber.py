@@ -52,10 +52,15 @@ def _load_model() -> Transcription:
     logger.info("Loading Whisper model (lazy initialization)...")
 
     try:
-        # Load Whisper large-v3 with GPU acceleration
+        # Check WHISPER_GPU env var (default: true for backwards compatibility)
+        use_gpu = os.environ.get("WHISPER_GPU", "true").lower() in ("true", "1", "yes")
+        # Use smaller model on CPU for acceptable performance
+        model_path = "openai/whisper-large-v3" if use_gpu else "openai/whisper-base"
+
+        logger.info(f"Loading Whisper model: {model_path} (gpu={use_gpu})")
         _transcription_model = Transcription(
-            path="openai/whisper-large-v3",
-            gpu=True
+            path=model_path,
+            gpu=use_gpu
         )
         logger.info("Whisper model loaded successfully")
         return _transcription_model

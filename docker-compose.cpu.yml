@@ -1,0 +1,51 @@
+# Docker Compose override for CPU-only environments (no NVIDIA GPU)
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+#
+# This override:
+#   - Builds txtai from the CPU Dockerfile (neuml/txtai-cpu base image)
+#   - Removes NVIDIA GPU reservations
+#   - Removes NVIDIA environment variables
+#   - Configures Whisper for CPU mode (smaller model for acceptable performance)
+#
+# Note: AI models (Whisper transcription, etc.) will run on CPU.
+# Whisper uses the 'base' model on CPU instead of 'large-v3' for performance.
+# Search, RAG, and most features are unaffected (they use external APIs).
+
+services:
+  txtai:
+    build:
+      context: .
+      dockerfile: Dockerfile.txtai-cpu
+    environment:
+      # Set the Hugging Face transformers cache directory
+      - TRANSFORMERS_CACHE=/models
+      # Configuration file location
+      - CONFIG=/config.yml
+      # Qdrant connection
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      # Together AI API key (for LLM/RAG via external serverless API)
+      - TOGETHERAI_API_KEY=${TOGETHERAI_API_KEY}
+      # LLM model for txtai backend features (shared with frontend RAG)
+      - RAG_LLM_MODEL=${RAG_LLM_MODEL:-Qwen/Qwen2.5-72B-Instruct-Turbo}
+      # Ollama configuration (SPEC-019 Phase 1)
+      - OLLAMA_API_URL=${OLLAMA_API_URL:-http://host.docker.internal:11434}
+      - OLLAMA_EMBEDDINGS_MODEL=${OLLAMA_EMBEDDINGS_MODEL:-nomic-embed-text}
+      - OLLAMA_EMBEDDING_DIMENSION=${OLLAMA_EMBEDDING_DIMENSION:-768}
+      - OLLAMA_CLASSIFICATION_MODEL=${OLLAMA_CLASSIFICATION_MODEL:-llama3.2-vision:11b}
+      # PostgreSQL connection (for txtai content storage)
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-txtai}
+      # Add parent directory to Python path for custom workflow actions
+      - PYTHONPATH=/
+      # CPU-specific: disable GPU for Whisper transcription
+      - WHISPER_GPU=false
+    deploy: {}
+
+  frontend:
+    deploy: {}

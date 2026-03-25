@@ -1,0 +1,26 @@
+# CPU-only txtai API image (no NVIDIA GPU required)
+#
+# Use this Dockerfile for environments without an NVIDIA GPU.
+# AI models (Whisper, etc.) will run on CPU, which is slower but functional.
+#
+# Usage with docker-compose override:
+#   docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+#
+# Build standalone:
+#   docker build -f Dockerfile.txtai-cpu -t txtai-api:local .
+
+FROM neuml/txtai-cpu:latest
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY custom-requirements.txt /custom-requirements.txt
+COPY qdrant_txtai-2.0.0-py3-none-any.whl /qdrant_txtai-2.0.0-py3-none-any.whl
+RUN pip install --no-cache-dir -r /custom-requirements.txt
+
+# Default command
+CMD ["uvicorn", "txtai.api:app", "--host", "0.0.0.0", "--port", "8000"]
