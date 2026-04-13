@@ -32,7 +32,7 @@ This project provides a complete semantic search infrastructure with intelligent
 ## Prerequisites
 
 - Docker and Docker Compose
-- NVIDIA GPU with Docker runtime (for GPU acceleration)
+- NVIDIA GPU with Docker runtime (optional, for GPU-accelerated AI models)
 - **Together AI API key** (for RAG queries) - Get free key at [together.ai](https://together.ai)
 - At least 8GB RAM (16GB+ recommended)
 - 10GB free disk space (for models and data)
@@ -47,11 +47,13 @@ This project provides a complete semantic search infrastructure with intelligent
 
 2. **Build and start the services**:
    ```bash
-   # First time: build the custom txtai image (includes ffmpeg, tesseract, etc.)
+   # GPU environment (default):
    docker compose build txtai
-
-   # Start all services
    docker compose up -d
+
+   # CPU-only environment (no NVIDIA GPU):
+   docker compose -f docker-compose.cpu.yml build txtai
+   docker compose -f docker-compose.cpu.yml up -d
    ```
 
 3. **Wait for initialization** (first run downloads models):
@@ -65,13 +67,14 @@ This project provides a complete semantic search infrastructure with intelligent
    - Whisper large (audio transcription): ~3 GB
    - BART-large (summarization): ~560 MB
 
-   **Minimal setup** (text search only, no GPU required):
-   - Skip GPU runtime, comment out `GPU` profile in docker-compose.yml
-   - Download time: ~274 MB (embeddings only)
-   - No Together AI key needed to start; only required for RAG queries (`/ask`)
+   **CPU-only setup** (all features, no GPU required):
+   - Use `docker-compose.cpu.yml` override (see step 2 above)
+   - Uses `neuml/txtai-cpu` base image and smaller Whisper model
+   - AI models (transcription, etc.) run on CPU — slower but fully functional
+   - Search, RAG, and most features use external APIs and are unaffected
 
-   **Full setup** (all AI features, GPU required):
-   - NVIDIA GPU with CUDA support required
+   **GPU setup** (default, faster AI inference):
+   - NVIDIA GPU with CUDA support and Docker runtime required
    - 16 GB RAM recommended
    - Download time: 45-90 minutes (first run only; models cached in ./models/)
 
@@ -229,9 +232,14 @@ docker compose restart
 
 **Building the txtai image** (required on first run, and after changing `custom-requirements.txt`, `Dockerfile.txtai`, or the qdrant wheel):
 ```bash
+# GPU environment (default)
 docker compose build txtai       # build
 docker compose build txtai --no-cache   # force rebuild
 docker compose up -d             # start
+
+# CPU-only environment
+docker compose -f docker-compose.yml -f docker-compose.cpu.yml build txtai
+docker compose -f docker-compose.cpu.yml up -d
 ```
 
 ## Data Persistence
@@ -283,7 +291,7 @@ See [docs/KNOWLEDGE-GRAPH.md](docs/KNOWLEDGE-GRAPH.md) for full documentation in
 
 **Optional components** (configure in `config.yml`): extractive QA, translation (`Helsinki-NLP/opus-mt-en-es`), zero-shot classification (`facebook/bart-large-mnli` for auto-labeling).
 
-**GPU:** To limit to first GPU, set `NVIDIA_VISIBLE_DEVICES=0` in `docker-compose.yml`.
+**GPU:** To limit to first GPU, set `NVIDIA_VISIBLE_DEVICES=0` in `docker-compose.yml`. For CPU-only environments, use the `docker-compose.cpu.yml` override (see [Quick Start](#quick-start)).
 
 ## Troubleshooting
 
@@ -294,7 +302,12 @@ docker compose logs txtai          # check service logs
 docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi  # verify GPU
 ```
 
-**Out of memory:** Use `neuml/txtai:latest` (CPU-only) instead of `neuml/txtai-gpu:latest`.
+**"Could not select device driver nvidia":** You're running on a machine without an NVIDIA GPU. Use the CPU override:
+```bash
+docker compose -f docker-compose.cpu.yml up -d
+```
+
+**Out of memory:** Use the CPU override (`docker-compose.cpu.yml`) which uses `neuml/txtai-cpu` base image.
 
 **Qdrant connection issues:** `curl http://localhost:6333` — verify it responds, then `docker compose exec txtai ping qdrant`.
 

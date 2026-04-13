@@ -1,3 +1,17 @@
+# Docker Compose for CPU-only environments (no NVIDIA GPU required)
+#
+# This is a standalone replacement for docker-compose.yml on machines without
+# an NVIDIA GPU. It removes all GPU deploy blocks and NVIDIA environment
+# variables, and builds txtai from the CPU Dockerfile.
+#
+# Usage:
+#   docker compose -f docker-compose.cpu.yml build txtai
+#   docker compose -f docker-compose.cpu.yml up -d
+#
+# Note: AI models (Whisper transcription, etc.) will run on CPU.
+# Whisper uses the 'base' model on CPU instead of 'large-v3' for performance.
+# Search, RAG, and most features use external APIs and are unaffected.
+
 services:
   qdrant:
     image: qdrant/qdrant:latest
@@ -54,7 +68,7 @@ services:
   txtai:
     build:
       context: .
-      dockerfile: Dockerfile.txtai
+      dockerfile: Dockerfile.txtai-cpu
     image: txtai-api:local
     container_name: txtai-api
     ports:
@@ -78,9 +92,6 @@ services:
       - TRANSFORMERS_CACHE=/models
       # Configuration file location
       - CONFIG=/config.yml
-      # Enable NVIDIA GPU visibility
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       # Qdrant connection
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
@@ -101,6 +112,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-txtai}
       # Add parent directory to Python path for custom workflow actions
       - PYTHONPATH=/
+      # CPU-specific: disable GPU for Whisper transcription
+      - WHISPER_GPU=false
     extra_hosts:
       # Allow container to access host services (like Ollama)
       - "host.docker.internal:host-gateway"
@@ -110,13 +123,6 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
 
   frontend:
     build:
@@ -174,19 +180,10 @@ services:
       - GRAPHITI_MAX_RETRIES=${GRAPHITI_MAX_RETRIES:-3}
       - GRAPHITI_RETRY_BASE_DELAY=${GRAPHITI_RETRY_BASE_DELAY:-10}
       - SEMAPHORE_LIMIT=${SEMAPHORE_LIMIT:-5}
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     restart: unless-stopped
     depends_on:
       - txtai
       - qdrant
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
 
   # MCP Server for Claude Code integration (SPEC-015) - DISABLED BY DEFAULT
   #
@@ -195,7 +192,7 @@ services:
   # See mcp_server/README.md for setup instructions.
   #
   # To enable for local setup, uncomment the service below and run:
-  #   docker compose up -d txtai-mcp
+  #   docker compose -f docker-compose.cpu.yml up -d txtai-mcp
   #
   txtai-mcp:
     build:
@@ -240,19 +237,3 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
-
-  # Example: Additional service for scheduled workflows (optional)
-  # txtai-service:
-  #   image: neuml/txtai-cpu:latest
-  #   container_name: txtai-service
-  #   volumes:
-  #     - ./models:/models
-  #     - ./workflows:/workflows
-  #   environment:
-  #     - TRANSFORMERS_CACHE=/models
-  #   restart: unless-stopped
-
-# Optional: Create named volumes for better management
-# volumes:
-#   models:
-#   workflows:
