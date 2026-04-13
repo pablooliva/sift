@@ -394,6 +394,7 @@ For production:
 - [txtai Documentation](https://neuml.github.io/txtai/)
 - [Qdrant Documentation](https://qdrant.tech/documentation/)
 - [Sentence Transformers](https://www.sbert.net/)
+- [Agent Memory Systems Comparison](8-agent-memory-systems-vs-sift.md) — How this project's stack compares to Mem0, Letta, Cognee, Hindsight, and others
 
 ### Community
 - [txtai GitHub](https://github.com/neuml/txtai)
